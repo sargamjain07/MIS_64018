@@ -1,0 +1,64 @@
+---
+title: "sjain15_Assignment 2"
+author: "Sargam Jain"
+date: "9/23/2022"
+output: pdf_document
+---
+
+
+#Load the "lpSolveAPI" packages.
+```{r}
+library(lpSolve)
+```
+
+#Setting working directory
+```{r}
+setwd("~/Desktop/QMM")
+```
+
+#Set the objective function for the problem.
+```{r}
+f.obj <- c(420,420,420,360,360,360,300,300,300)
+```
+
+#writing the contraints
+```{r}
+f.con <- matrix(c(1,1,1,0,0,0,0,0,0,
+                  0,0,0,1,1,1,0,0,0,
+                  0,0,0,0,0,0,1,1,1,
+                  20,15,12,0,0,0,0,0,0,
+                  0,0,0,25,15,12,0,0,0,
+                  0,0,0,0,0,0,20,15,12,
+                  1,0,0,1,0,0,1,0,0,
+                  0,1,0,0,1,0,0,1,0,
+                  0,0,1,0,0,1,0,0,1), nrow = 9, byrow = TRUE)
+```
+
+#Setting inequaliy direction signs 
+```{r}
+f.dir <- c("<=",
+           "<=",
+           "<=",
+           "<=",
+           "<=",
+           "<=",
+           "<=",
+           "<=",
+           "<=")
+```
+
+#Setting right hand coefficients
+```{r}
+f.rhs <- c(750,900,450,13000,12000,5000,900,1200,750)
+```
+
+#Final value
+```{r}
+lp("max", f.obj, f.con, f.dir, f.rhs)
+```
+
+#Variable final values
+```{r}
+lp("max", f.obj, f.con, f.dir, f.rhs)$solution
+```
+
