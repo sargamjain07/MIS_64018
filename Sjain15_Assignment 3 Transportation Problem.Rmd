@@ -1,0 +1,220 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
+---
+title: "sjain15_Assignment_3"
+author: "Sargam Jain"
+date: "10/16/2022"
+output:
+  pdf_document: default
+  word_document: default
+
+
+
+
+Objective Function
+Minimize TC = 622x11+614x12+630x13+641x21+645x22+649x23
+These are subject to following constraints
+x11+x12+x13 >= 100
+x21+x22+x23 >= 120
+These are supply constraints
+
+x11+x21 >= 80
+x12+x22 >= 60
+x13+x23 >= 70
+These are demand constraints
+
+These are all subject to non-negativity where xij>=0 where i=1,2 and j= 1,2,3
+
+
+```{r}
+library(Matrix)
+library(tinytex)
+library("lpSolve")
+```
+
+
+```{r}
+display <- matrix(c(22,14,30,600,100,
+                  16,20,24,625,120,
+                  80,60,70,"-","210/220"),ncol=5,nrow=3,byrow=TRUE)
+ colnames(display) <- c("Warehouse1","Warehouse2","Warehouse3","Production Cost","Production Capacity")
+ rownames(display) <- c("PlantA","PlantB","Monthly Demand")
+ display <- as.table(display)
+ display
+ 
+```
+
+```{r}
+  display1 <- matrix(c(622,614,630,0,100,
+                  641,645,649,0,120,
+                  80,60,70,10,220),ncol=5,nrow=3,byrow=TRUE)
+ colnames(display1) <- c("Warehouse1","Warehouse2","Warehouse3","Dummy","Production Capacity")
+ rownames(display1) <- c("PlantA","PlantB","Monthly Demand")
+ display1 <- as.table(display1)
+ display1
+```
+
+#This table will satisfy the need for balanced problem. We have made total costs matrix below
+```{r}
+totalcosts <- matrix(c(622,614,630,0,
+                   641,645,649,0),nrow=2, byrow = TRUE)
+```
+
+#Identifying production capacity in the row of the matrix
+```{r}
+row.rhs <- c(100,120)
+ row.signs <- rep("<=", 2)
+```
+
+#Identifying the monthly demand with double variable 10 at the end.
+```{r}
+col.rhs <- c(80,60,70,10)
+ col.signs <- rep(">=", 4)
+```
+
+#Ready to run LP Transport command
+```{r}
+lp.transport(totalcosts,"min",row.signs,row.rhs,col.signs,col.rhs)
+```
+
+#Here is the solution matrix
+```{r}
+lp.transport(totalcosts, "min", row.signs, row.rhs, col.signs, col.rhs)$solution
+```
+
+This gives us the following that Z = $132790. This gives us the following results for each of the variables:
+60x12 which is the Warehouse 2 from plant A.
+40x13 which is the Warehouse 3 from plant A.
+80x21 which is the Warehouse 1 from plant B.
+30x23 which is the Warehouse 3 from plant B.
+and because "10" shows up in the 4th Variable 10x24 is a "throw away variable".
+This would complete the answer for Question 1.
+
+Qyestion 2) We know that the number of variables in primal is equal to the number of constants in dual. The first question is the primal of the LP. Since we took the minimization in the primal we will maximize in the dual. let's use the variables "m" & "n" for the dual problem
+
+```{r}
+display2 <- matrix(c(622,614,630,100,"m_1",
+                  641,645,649,120,"m_2",
+                  80,60,70,220,"-",
+                  "n_1","n_2","n_3","-","-"),ncol=5,nrow=4,byrow=TRUE)
+ colnames(display2) <- c("W1","W2","W3","Prod Cap","Supply (Dual)")
+ rownames(display2) <- c("PlantA","PlantB","Monthly Demand","Demand (Dual)")
+ display2 <- as.table(display2)
+ display2
+ 
+```
+
+From here we are going to create our objective function based on the constraints from the primal. Then use the objective function from the primal to find the constants of the dual.
+
+Maximize Z = 100m1+120m2+80n1+60n2+70n3
+
+This objective function is subject to following constraints:
+
+m1+n1 <= 622
+m1+n2 <= 614
+m1+n3 <= 630
+m2+n1 <= 641
+m2+n2 <= 645
+m2+n3 <= 649
+
+These constants are taken from the transposed matrix of the primal of the linear programming function. An easy way to check is to transpose the f.con into the matrix and match to the constants above in the primal. These are unrestricted where mk, nl where m=1,2 & n=1,2,3
+
+#Constants of the primal are now the objective function variables.
+```{r}
+ f.obj <- c(100,120,80,60,70)
+ #transposed from the constraints matrix in the primal
+ f.con <- matrix(c(1,0,1,0,0,
+                   1,0,0,1,0,
+                   1,0,0,0,1,
+                   0,1,1,0,0,
+                   0,1,0,1,0,
+                   0,1,0,0,1),nrow=6, byrow = TRUE)
+ #these change because we are MAX the dual not min
+ f.dir <- c("<=",
+ "<=",
+ "<=",
+ "<=",
+"<=", "<=")
+ f.rhs <- c(622,614,630,641,645,649)
+ lp ("max", f.obj, f.con, f.dir, f.rhs)
+```
+
+```{r}
+lp ("max", f.obj, f.con, f.dir, f.rhs)$solution
+```
+
+
+So Z=139,120 dollars and variables are: m1 = 614 which represents plant A
+m2 = 633 which represents Plant B
+n1 = 8 which represents Warehouse 1
+n3 = 16 which represents Warehouse 3
+
+OBSERVATION
+
+The minimal Z=132790 (Primal) and the maximum Z=139120(Dual). What are we trying to max/min in this problem. We found that we should not be shipping from Plant(A/B) to all three Warehouses. We should be shipping from:
+
+60x12 which is 60 Units from Plant A to Warehouse 2. 
+40x13 which is 40 Units from Plant A to Warehouse 3. 
+80x21 which is 60 Units from Plant B to Warehouse 1. 
+30x23 which is 60 Units from Plant B to Warehouse 3.
+Now we want to Max the profits from each distribution in respect to capacity.
+
+Question 3) 
+
+m1 - n1 <= 622
+
+then we subtract n1 to the other side to get m1 <= 622 - n1
+
+To compute that value it would be $614<=(-8+622) which is true. We would continue to evaluate these equations:
+
+m1 <= 622-n1===614<=622-8=614 = TRUE
+m1 <= 614-n2===614<=614-0=614 = TRUE
+m1 <= 630-n3===614<=630-16=614 = TRUE
+m2 <= 641-n1===633<=641-8=633 = TRUE
+m2 <= 645−n2===633<=645-0=645 = NOT TRUE
+m2 <= 649-n3===633<=649-16=633 = TRUE
+
+#Also learning from the Duality-and-Sensitivity we can test for the shadow price by updating each of the column. We change the 100 to 101 and 120 to 121 in our LP Transport. 
+```{r}
+row.rhs1 <- c(101,120)
+ row.signs1 <- rep("<=", 2)
+ col.rhs1 <- c(80,60,70,10)
+ col.signs1 <- rep(">=", 4)
+ row.rhs2 <- c(100,121)
+ row.signs2 <- rep("<=", 2)
+ col.rhs2 <- c(80,60,70,10)
+ col.signs2 <- rep(">=", 4)
+ lp.transport(totalcosts,"min",row.signs,row.rhs,col.signs,col.rhs)
+```
+
+
+```{r}
+ lp.transport(totalcosts,"min",row.signs1,row.rhs1,col.signs1,col.rhs1)
+```
+
+
+```{r}
+lp.transport(totalcosts,"min",row.signs2,row.rhs2,col.signs2,col.rhs2)
+```
+  
+Since we are taking the min of this specific function seeing the number go down by 19 means the shadow price is 19, that was found from the primal and adding 1 to each of the Plants. However with Plant B does not have a shadow price. We also found that the dual variable n2 where Marginal Revenue (MR) <= Marginal Cost (MC). Recalling the equation which was
+m2 <= 645 -n2===633<=645-0=645 = NOT TRUE which was found by using m1-n1 <= 622
+
+```{r}
+lp ("max", f.obj, f.con, f.dir, f.rhs)$solution
+```
+
+n_2 was = 0.
+
+CONCLUSION:
+from the primal:
+60x12 which is 60 Units from Plant A to Warehouse 2. 
+40x13 which is 40 Units from Plant A to Warehouse 3. 
+80x21 which is 60 Units from Plant B to Warehouse 1. 
+30x23 which is 60 Units from Plant B to Warehouse 3. 
+from the dual
+We want the MR=MC. Five of the six MR<=MC. The only equation that does not satisfy this requirement is Plant B to Warehouse 2. 
+We can see that from the primal that we will not be shipping any AED device there.
