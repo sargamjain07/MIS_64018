@@ -1,0 +1,84 @@
+---
+title: "sjain15_QMM assignment 5"
+author: "Sargam Jain"
+date: "11/5/2022"
+output: pdf_document
+---
+
+The Research and Development Division of the Emax Corporation has developed three new products. A decision now needs to be made on which mix of these products should be produced. Management wants primary consideration given to three factors:
+1. Total Profit,
+2. Stability in the workforce and
+3. Achieving an increase in the company’s earnings next year from the $75 million achieved
+this year.
+
+Objective Function
+Maximize Z = P - 6C - 3D, where
+P = Total discounted profit over the life of the new products,
+C = Change in either direction towards the current level of employment,
+D = decrease if any in next year’s earnings from the current year’s level.
+
+#Setting default values to get a clean output
+```{r}
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+#Setting working directory
+```{r}
+setwd("~/Desktop/QMM")
+```
+
+#Loading the required packages
+```{r}
+library(lpSolve)
+library(lpSolveAPI)
+```
+
+#Loading the LP file from the current directory and printing the model
+
+```{r}
+emax_rd <- read.lp("emax.lp")
+print(emax_rd)
+```
+
+Defining y1p and y1m as the amount over (if any) and the amount under (if any) the employment level goal.
+Defining y2p and y2m in the same way for the goal regarding earnings next year.
+Define x1, x2 and x3 as the production rates of Products 1, 2, and 3, respectively.
+Also expressing P in terms of x1, x2 and x3 and the objective function in terms of x1, x2, x3, y1p, y1m ,y2p and y2m
+
+```{r}
+emax_table <- matrix(c("Total Profit", "Employment Level", "Earnings Next Year",
+                       20,6,8,
+                       15,4,7,
+                       25,5,5,
+                       "Maximize","=50",">=75",
+                       "Millions of Dollars", "Hundreds of Employees", "Millions of Dollars"), ncol=6, byrow = F)
+
+colnames(emax_table) <- c("Factor","Product 1", "Product 2", "Product 3", "Goal", "Units")
+as.table(emax_table)
+
+```
+
+#Solving the goal programming model to obtain the objective and variable values
+```{r}
+solve(emax_rd)
+```
+
+```{r}
+get.objective(emax_rd)
+```
+
+
+```{r}
+get.variables(emax_rd)
+```
+
+Economic Interpretation:
+
+1. X1, X2, X3 are the units of combination which the firm needs to implement in order the maximize the objective function. As, X1 - Product 1, X2- Product 2 and X3 for Product 3 states that Product 1 and Product 2 cannot be produced as intended i.e. 20 Units of Product 1 and 15 Units of Product 2 cannot be produced as the resultant solution was “0”. But there is a change to X3 i.e. Product 3 is the only product which the firm can produce i.e. 15 Units of Product 3 to thereby maximize the profit.
+
+2. The goal was to stabilize the employment level with the maximum number of employees confined to 50 Hundred Employees but here in this case the firm exceeded the employment levels by 25 Hundred Employees (y1p) for which they would be needing to pay penalty for the excess/rise in the employees count.
+
+3. The goal of y2p and y2m was to capture the increase or decrease in the next years earnings from the current level which states as “0” in this case which indicates that there is no increase or decrease in the earnings of next year when compared to that with the current year. Therefore, the earnings for next year remain constant.
+
+Therefore, The profit that the firm maximizing is called out by the objective function value which here in our case is 225 Million Dollars.
